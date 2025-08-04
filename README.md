@@ -45,15 +45,17 @@ podman run --rm   --pod mypod   --env-file .env   email-processor
 
 ## ⏱️ Cron Job
 
-Esse worker foi pensado para ser executado periodicamente via **cron job no host** ou agendado por um container dedicado. Por exemplo:
+Esse worker foi projetado para ser executado periodicamente via **cron job no host**.
 
-```cron
-*/10 * * * * podman run --rm --env-file /caminho/para/.env email-processor
-```
+A configuração recomendada já inclui os seguintes scripts:
 
-Ou usando um script `.sh` agendado pelo cron.
+- `start-email-processor.sh`: constrói a imagem, registra o cron job e prepara o ambiente.
+- `stop-email-processor.sh`: remove o cron job e limpa o ambiente.
+- `run-email-processor.sh`: executa o container com base na imagem e no `.env`.
 
----
+Para evitar que múltiplas execuções concorrentes causem conflitos ou inconsistências, o script `run-email-processor.sh` utiliza um **arquivo de lock** (`/tmp/email-processor.lock`). Esse lock impede que a tarefa seja executada caso outra instância ainda esteja rodando.
+
+Além disso, o script detecta **locks órfãos** (processos que não existem mais) e os remove automaticamente após um tempo configurável (ex: 15 minutos), garantindo que execuções futuras não fiquem bloqueadas indevidamente.
 
 ## 📦 Armazenamento futuro
 

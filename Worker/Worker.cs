@@ -3,20 +3,20 @@ using Application.ProcessEmail;
 using Domain.Interfaces;
 
 namespace Worker;
-
 public class EmailProcessorWorker(
     ILogger<EmailProcessorWorker> logger,
     IEmailReader emailReader,
-    IProcessEmailHandler handler
-) : BackgroundService
+    IProcessEmailHandler handler,
+    IHostApplicationLifetime appLifetime
+) : IHostedService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("📨 EmailProcessorWorker started.");
 
         try
         {
-            var emailMessages = await emailReader.ReadEmailsAsync(stoppingToken);
+            var emailMessages = await emailReader.ReadEmailsAsync(cancellationToken);
 
             foreach (var email in emailMessages)
             {
@@ -26,8 +26,7 @@ public class EmailProcessorWorker(
                     AttachmentBytes: email.AttachmentBytes
                 );
 
-                await handler.Handle(command, stoppingToken);
-
+                await handler.Handle(command, cancellationToken);
             }
 
             logger.LogInformation("✔️ Processed {Count} emails.", emailMessages?.Count() ?? 0);
@@ -36,6 +35,10 @@ public class EmailProcessorWorker(
         {
             logger.LogError(ex, "❌ Error while processing emails");
         }
+
         logger.LogInformation("🛑 EmailProcessorWorker stopping.");
+        appLifetime.StopApplication();
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
