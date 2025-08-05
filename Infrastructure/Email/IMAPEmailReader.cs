@@ -63,7 +63,7 @@ public class IMAPEmailReader(
 
     }
     
-     private async Task ProcessMessage(UniqueId uid, IMailFolder inbox, List<EmailMessage> result, CancellationToken cancellationToken)
+    private async Task ProcessMessage(UniqueId uid, IMailFolder inbox, List<EmailMessage> result, CancellationToken cancellationToken)
     {
         try
         {
