@@ -1,12 +1,12 @@
-using Application.Extensions;
-using Infrastructure.Extensions;
-using Worker;
+using TickerQ.DependencyInjection.Hosting;
+using Worker.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddHostedService<EmailProcessorWorker>();
+builder.Services.AddWorker(builder.Configuration);
 
 var host = builder.Build();
+
+host.UseTickerQ();
+
 host.Run();
