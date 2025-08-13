@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Application.ProcessEmail;
+using Domain.DTOs;
 using Domain.Interfaces;
 
 namespace Worker;
@@ -12,32 +13,32 @@ public class EmailProcessorWorker(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("📨 EmailProcessorWorker started.");
+       logger.LogInformation("📨 EmailProcessorWorker started.");
+        var count = 0;
 
         try
         {
-            var emailMessages = await emailReader.ReadEmailsAsync(cancellationToken);
-
-            foreach (var email in emailMessages)
+            await foreach (ProcessedEmailMessage item in emailReader.ReadEmailsAsync(cancellationToken))
             {
-                var command = new ProcessEmailCommand(
-                    Subject: email.Subject,
-                    AttachmentName: email.AttachmentName,
-                    AttachmentBytes: email.AttachmentBytes
-                );
-
-                await handler.Handle(command, cancellationToken);
+                logger.LogInformation("✉️ Subject: {Subject}", item.Message.Subject);
+                count++;
             }
 
-            logger.LogInformation("✔️ Processed {Count} emails.", emailMessages?.Count() ?? 0);
+            logger.LogInformation("✔️ Stream completed. Logged {Count} emails.", count);
         }
-        catch (Exception ex)
+        catch (OperationCanceledException ex)
         {
-            logger.LogError(ex, "❌ Error while processing emails");
+            logger.LogWarning(ex, "⏹️ Processing canceled.");
         }
-
-        logger.LogInformation("🛑 EmailProcessorWorker stopping.");
-        appLifetime.StopApplication();
+        catch (System.Exception ex)
+        {
+            logger.LogError(ex, "❌ Error while processing emails.");
+        }
+        finally
+        {
+            logger.LogInformation("🛑 EmailProcessorWorker stopping.");
+            appLifetime.StopApplication();
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

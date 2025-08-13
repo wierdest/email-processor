@@ -1,9 +1,10 @@
 using System;
+using Domain.DTOs;
 using Domain.Entities;
 
 namespace Domain.Interfaces;
 
 public interface IEmailReader
 {
-    Task<IEnumerable<EmailMessage>> ReadEmailsAsync(CancellationToken cancellationToken);
+    IAsyncEnumerable<ProcessedEmailMessage> ReadEmailsAsync(CancellationToken cancellationToken);
 }
