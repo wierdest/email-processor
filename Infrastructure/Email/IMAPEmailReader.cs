@@ -48,11 +48,14 @@ public class IMAPEmailReader(
                 email,
                 DeleteAsync: async () =>
                 {
+                    _logger.LogInformation("🧹 Marking email UID {Uid} for deletion: {Subject}", uid, email.Subject);
                     await inbox.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, cancellationToken);
                 });
         }
 
+        _logger.LogInformation("🗑️ Expunging deleted messages…");
         await inbox.ExpungeAsync(cancellationToken);
+        _logger.LogInformation("✅ Expunge complete.");
 
         if (client.IsConnected)
         {
