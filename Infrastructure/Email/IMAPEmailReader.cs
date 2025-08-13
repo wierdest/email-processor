@@ -20,7 +20,7 @@ public class IMAPEmailReader(
 {
     private readonly IMAPSettings _settings = options.Value;
     private readonly ILogger<IMAPEmailReader> _logger = logger;
-   public async IAsyncEnumerable<ProcessedEmailMessage> ReadEmailsAsync(
+    public async IAsyncEnumerable<ProcessedEmailMessage> ReadEmailsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
@@ -35,7 +35,7 @@ public class IMAPEmailReader(
         var uids = await inbox.SearchAsync(SearchQuery.All, cancellationToken);
         _logger.LogInformation("🔍 Found {Count} messages.", uids.Count);
 
-         foreach (var uid in uids)
+        foreach (var uid in uids)
         {
             var mime = await inbox.GetMessageAsync(uid, cancellationToken);
             // só o placeholder

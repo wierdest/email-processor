@@ -22,6 +22,9 @@ public class EmailProcessorWorker(
             {
                 logger.LogInformation("✉️ Subject: {Subject}", item.Message.Subject);
                 count++;
+                // aí processo a mensagem e então:
+
+                await item.DeleteAsync();
             }
 
             logger.LogInformation("✔️ Stream completed. Logged {Count} emails.", count);
