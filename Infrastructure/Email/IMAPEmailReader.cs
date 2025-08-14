@@ -35,32 +35,41 @@ public class IMAPEmailReader(
         var uids = await inbox.SearchAsync(SearchQuery.All, cancellationToken);
         _logger.LogInformation("🔍 Found {Count} messages.", uids.Count);
 
-        foreach (var uid in uids)
+        try
         {
-            var mime = await inbox.GetMessageAsync(uid, cancellationToken);
-            // só o placeholder
-            var email = new EmailMessage
+            foreach (var uid in uids)
             {
-                Subject = string.IsNullOrWhiteSpace(mime.Subject) ? "(No Subject)" : mime.Subject
-            };
-
-            yield return new ProcessedEmailMessage(
-                email,
-                DeleteAsync: async () =>
+                var mime = await inbox.GetMessageAsync(uid, cancellationToken);
+                // só o placeholder
+                var email = new EmailMessage
                 {
-                    _logger.LogInformation("🧹 Marking email UID {Uid} for deletion: {Subject}", uid, email.Subject);
-                    await inbox.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, cancellationToken);
-                });
+                    Subject = string.IsNullOrWhiteSpace(mime.Subject) ? "(No Subject)" : mime.Subject
+                };
+
+                yield return new ProcessedEmailMessage(
+                    email,
+                    DeleteAsync: async () =>
+                    {
+                        _logger.LogInformation("🧹 Marking email UID {Uid} for deletion: {Subject}", uid, email.Subject);
+                        await inbox.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, cancellationToken);
+                    });
+            }
+
+            _logger.LogInformation("🗑️ Expunging deleted messages…");
+            await inbox.ExpungeAsync(cancellationToken);
+            _logger.LogInformation("✅ Expunge complete.");
+
         }
-
-        _logger.LogInformation("🗑️ Expunging deleted messages…");
-        await inbox.ExpungeAsync(cancellationToken);
-        _logger.LogInformation("✅ Expunge complete.");
-
-        if (client.IsConnected)
+        finally
         {
-            await client.DisconnectAsync(true, cancellationToken);
-            _logger.LogInformation("🔌 Disconnected from IMAP server.");
+            if (client.IsConnected)
+            {
+                await client.DisconnectAsync(true, cancellationToken);
+                _logger.LogInformation("🔌 Disconnected from IMAP server.");
+            }
+            
         }
+
+
     }
 }
